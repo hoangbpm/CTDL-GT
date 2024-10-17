@@ -1,0 +1,67 @@
+def sap_xep(arr):  
+    thap, TB, cao = 0, 0, len(arr) - 1  
+    while TB <= cao:  
+        if arr[TB] == 0:  # Do 
+            arr[thap], arr[TB] = arr[TB], arr[thap]  
+            thap += 1  
+            TB += 1  
+        elif arr[TB] == 1:  # Trang  
+            TB += 1  
+        else:  # Xanh
+            arr[TB], arr[cao] = arr[cao], arr[TB]  
+            cao -= 1  
+
+# mã hóa màu xuôi, ngược
+color_map = {'đỏ': 0, 'trắng': 1, 'xanh': 2}  
+map_color = {0: 'đỏ', 1: 'trắng', 2: 'xanh'}  
+ 
+input = ['xanh', 'đỏ', 'xanh', 'đỏ', 'đỏ', 'trắng', 'đỏ', 'xanh', 'trắng', 'đỏ']  
+# mã hóa input
+ma_hoa_input = [color_map[color] for color in input]  
+
+# Sắp xếp  
+sap_xep(ma_hoa_input) 
+sap_xep = [map_color[color] for color in ma_hoa_input]  
+
+print(sap_xep)
+
+
+# Bài 2: Sô Blum
+# Một số Blum là một số nửa nguyên tố có dạng p×q, trong đó p và q là các số nguyên tố cùng có dạng 4k+3.
+# Bước 1: 
+def sang_eratosthenes(gioi_han):  
+    la_nguyen_to = [True] * (gioi_han + 1)  
+    p = 2  
+    while (p * p <= gioi_han):  
+        if (la_nguyen_to[p] == True):  
+            for i in range(p * p, gioi_han + 1, p):  
+                la_nguyen_to[i] = False  
+        p += 1  
+    cac_nguyen_to = [p for p in range(2, gioi_han + 1) if la_nguyen_to[p]]  
+    return cac_nguyen_to
+# O(nloglogn)
+def tao_so_blum(N):  
+    cac_nguyen_to = sang_eratosthenes(int(N**0.5))  
+    nguyen_to_blum = [p for p in cac_nguyen_to if p % 4 == 3]  
+    so_blum = set()  
+    
+    for i in range(len(nguyen_to_blum)):  
+        for j in range(i, len(nguyen_to_blum)):  
+            p_blum = nguyen_to_blum[i] * nguyen_to_blum[j]  
+            if p_blum < N:  
+                so_blum.add(p_blum) 
+# O(nloglogn) n = sqrt(N)
+def tim_cac_cap_so_blum(so_blum, N):  
+    tap_hop_blum = set(so_blum)  
+    cap_so = []  
+    
+    for i in range(len(so_blum)):  
+        for j in range(i, len(so_blum)):  
+            tong = so_blum[i] + so_blum[j]  
+            if tong < N and tong in tap_hop_blum:  
+                cap_so.append((so_blum[i], so_blum[j]))  
+    
+    return cap_so  
+
+def kiem_tra_ton_tai_blum(so_blum, M):  
+    return M in so_blum  
