@@ -1,0 +1,219 @@
+#include <iostream>
+#include <cstring>
+
+struct Ngay {
+    int ngay, thang, nam;
+};
+
+struct SinhVien {
+    char maSV[8]; 
+    char hoTen[50];
+    int gioiTinh; // 1: Nam, 0: Nữ
+    Ngay ngaySinh;
+    char diaChi[100];
+    char lop[12];
+    char khoa[7];
+};
+
+// Cấu trúc nút cho danh sách liên kết
+struct Nut {
+    SinhVien data;
+    Nut *link;
+};
+
+// Cấu trúc danh sách
+struct DanhSach {
+    Nut *first;
+    Nut *last;
+};
+
+// Khởi tạo danh sách
+void Khoi_tao_Danh_sach(DanhSach &list) {
+    list.first = nullptr;
+    list.last = nullptr;
+}
+
+// Tạo một nút mới
+Nut* Tao_nut_moi(SinhVien sv) {
+    Nut* newNut = new Nut;
+    newNut->data = sv;
+    newNut->link = nullptr;
+    return newNut;
+}
+
+// Thêm sinh viên vào danh sách theo thứ tự
+void Nhap_vao_Danh_sach_sinh_vien(DanhSach &list, SinhVien sv) {
+    Nut *newNut = Tao_nut_moi(sv);
+    if (!list.first || std::strcmp(list.first->data.maSV, sv.maSV) > 0) {
+        newNut->link = list.first;
+        list.first = newNut;
+    } else {
+        Nut *nut_hien_tai = list.first;
+        while (nut_hien_tai->link && std::strcmp(nut_hien_tai->link->data.maSV, sv.maSV) <= 0) {
+            nut_hien_tai = nut_hien_tai->link;
+        }
+        newNut->link = nut_hien_tai->link;
+        nut_hien_tai->link = newNut;
+    }
+}
+
+// In thông tin một sinh viên
+void In_Sinh_Vien(const SinhVien &sv) {
+    std::cout << "Ma SV: " << sv.maSV 
+              << ", Ho Ten: " << sv.hoTen 
+              << ", Gioi Tinh: " << (sv.gioiTinh == 1 ? "Nam" : "Nu") 
+              << ", Ngay Sinh: " << sv.ngaySinh.ngay << "/" 
+              << sv.ngaySinh.thang << "/" << sv.ngaySinh.nam 
+              << ", Dia Chi: " << sv.diaChi 
+              << ", Lop: " << sv.lop 
+              << ", Khoa: " << sv.khoa 
+              << std::endl;
+}
+
+// Thêm sinh viên mới vào danh sách
+void Them_sinh_vien_moi(DanhSach &list) {
+    SinhVien sv;
+    std::cout << "Nhap ma SV: ";
+    std::cin >> sv.maSV;
+
+    std::cin.ignore(); 
+    std::cout << "Nhap ho ten: ";
+    std::cin.getline(sv.hoTen, sizeof(sv.hoTen)); 
+
+    std::cout << "Nhap gioi tinh (1: Nam, 0: Nu): ";
+    std::cin >> sv.gioiTinh;
+
+    std::cout << "Nhap ngay sinh (ngay thang nam): ";
+    std::cin >> sv.ngaySinh.ngay >> sv.ngaySinh.thang >> sv.ngaySinh.nam;
+
+    std::cin.ignore(); // Bỏ qua ký tự newline
+    std::cout << "Nhap dia chi: ";
+    std::cin.getline(sv.diaChi, sizeof(sv.diaChi));
+
+    std::cout << "Nhap lop: ";
+    std::cin.getline(sv.lop, sizeof(sv.lop));
+
+    std::cout << "Nhap khoa: ";
+    std::cin.getline(sv.khoa, sizeof(sv.khoa));
+
+    Nhap_vao_Danh_sach_sinh_vien(list, sv);
+}
+
+// In danh sách sinh viên
+void In_Danh_sach_sinh_vien(const DanhSach &list) {
+    Nut *nut_hien_tai = list.first;
+    while (nut_hien_tai) {
+        In_Sinh_Vien(nut_hien_tai->data);
+        nut_hien_tai = nut_hien_tai->link;
+    }
+}
+
+// Tìm và in ra sinh viên bị trùng ngày sinh
+void Tim_sinh_vien_bi_trung(DanhSach &list) {
+    if (!list.first) {
+        std::cout << "Khong co sinh vien trong danh sach!" << std::endl;
+        return;
+    }
+
+    Nut *nut_hien_tai = list.first;
+    bool found = false;
+
+    while (nut_hien_tai) {
+        Ngay ngay_sinh_hien_tai = nut_hien_tai->data.ngaySinh;
+        Nut *check = nut_hien_tai->link;
+
+        while (check) {
+            if (check->data.ngaySinh.ngay == ngay_sinh_hien_tai.ngay &&
+                check->data.ngaySinh.thang == ngay_sinh_hien_tai.thang &&
+                check->data.ngaySinh.nam == ngay_sinh_hien_tai.nam) {
+                // In ra danh sách các sinh viên bị trùng
+                In_Sinh_Vien(nut_hien_tai->data); // In sinh viên đầu tiên
+                In_Sinh_Vien(check->data); // In sinh viên bị trùng
+                found = true;
+                break; // Chỉ cần tìm một cặp trùng thì in và tiếp tục
+            }
+            check = check->link;
+        }
+        nut_hien_tai = nut_hien_tai->link;
+    }
+
+    if (!found) {
+        std::cout << "Khong tim thay sinh vien cung ngay sinh." << std::endl;
+    }
+}
+
+// Xóa tất cả sinh viên có cùng ngày sinh
+void Loai_bo_Sinh_vien_cung_ngay_sinh(DanhSach &list) {
+    if (!list.first) return; // Nếu danh sách rỗng
+
+    Nut *dummy = new Nut; // Tạo nút giả 
+    dummy->link = list.first;
+    Nut *previous = dummy;
+    Nut *current = list.first;
+
+    while (current) {
+        // Kiểm tra ngày sinh của sinh viên hiện tại
+        Ngay ngay_sinh_hien_tai = current->data.ngaySinh;
+        bool found_duplicate = false;
+
+        // Kiểm tra xem có sinh viên nào khác trùng ngày sinh không
+        Nut *check = current->link;
+        while (check) {
+            if (check->data.ngaySinh.ngay == ngay_sinh_hien_tai.ngay &&
+                check->data.ngaySinh.thang == ngay_sinh_hien_tai.thang &&
+                check->data.ngaySinh.nam == ngay_sinh_hien_tai.nam) {
+                found_duplicate = true;
+                break; // Đã tìm thấy trùng, không cần kiểm tra tiếp
+            }
+            check = check->link;
+        }
+
+        if (found_duplicate) {
+            // Nếu tìm thấy trùng, xóa tất cả sinh viên trùng lặp
+            Nut *temp = current;
+            while (temp && temp->data.ngaySinh.ngay == ngay_sinh_hien_tai.ngay &&
+                   temp->data.ngaySinh.thang == ngay_sinh_hien_tai.thang &&
+                   temp->data.ngaySinh.nam == ngay_sinh_hien_tai.nam) {
+                Nut *next = temp->link;
+                delete temp; // Xóa sinh viên trùng
+                temp = next; // Di chuyển đến sinh viên tiếp theo
+            }
+            previous->link = temp; // Kết nối lại danh sách
+            current = temp; // Di chuyển đến nút tiếp theo
+        } else {
+            previous = current; // Di chuyển previous đến nút hiện tại
+            current = current->link; // Di chuyển current đến nút tiếp theo
+        }
+    }
+
+    list.first = dummy->link; // Cập nhật danh sách
+    delete dummy; // Xóa nút giả
+}
+
+int main() {
+    DanhSach list;
+    Khoi_tao_Danh_sach(list);
+
+    char luaChon;
+    do {
+        Them_sinh_vien_moi(list);
+
+        std::cout << "Ban co muon nhap tiep (y/n)? ";
+        std::cin >> luaChon;
+        std::cin.ignore();
+    } while (luaChon == 'y' || luaChon == 'Y');
+
+    std::cout << "Danh sach sinh vien nhap vao:" << std::endl;
+    In_Danh_sach_sinh_vien(list); // In danh sách sinh viên đã nhập
+
+    std::cout << "Danh sach sinh vien bi trung ngay sinh:" << std::endl;
+    Tim_sinh_vien_bi_trung(list); // Tìm sinh viên bị trùng
+
+    std::cout << "Xoa tat ca sinh vien co cung ngay sinh:" << std::endl;
+    Loai_bo_Sinh_vien_cung_ngay_sinh(list); // Xóa sinh viên trùng ngày sinh
+
+    std::cout << "Danh sach sinh vien sau khi xoa trung lap ngay sinh:" << std::endl;
+    In_Danh_sach_sinh_vien(list); // In danh sách sau khi xóa
+
+    return 0;
+}
