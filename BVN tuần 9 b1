@@ -1,0 +1,117 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h> 
+
+struct Nut {
+    int duLieu; // Dữ liệu của nút
+    struct Nut* tiepTheo; // Con trỏ đến nút tiếp theo
+};
+
+// Hàm chèn nút mới sau nút T
+void chenNut(struct Nut* T, int duLieuMoi) {
+    if (T == NULL) {
+        printf("Nút trước đó không thể là NULL\n");
+        return;
+    } else {
+        // Cấp phát bộ nhớ cho nút mới
+        struct Nut* nutMoi = (struct Nut*)malloc(sizeof(struct Nut));
+        nutMoi->duLieu = duLieuMoi;
+        nutMoi->tiepTheo = T->tiepTheo;
+        T->tiepTheo = nutMoi;
+    }
+}
+
+// Hàm in danh sách liên kết
+void inDanhSach(struct Nut* dau) {
+    struct Nut* hienTai = dau;
+    while (hienTai != NULL) {
+        printf("Dữ liệu: %d -> ", hienTai->duLieu);
+        hienTai = hienTai->tiepTheo;
+    }
+    printf("NULL\n");
+}
+
+// Hàm tạo nút mới
+struct Nut* taoNut(int duLieu) {
+    struct Nut* nutMoi = (struct Nut*)malloc(sizeof(struct Nut));
+    nutMoi->duLieu = duLieu;
+    nutMoi->tiepTheo = NULL;
+    return nutMoi;
+}
+
+// Hàm xóa nút cuối
+void xoaNutCuoi(struct Nut** thamChieuDau) {
+    // Nếu danh sách rỗng
+    if (*thamChieuDau == NULL) return;
+
+    struct Nut* tam = *thamChieuDau;
+
+    // Nếu chỉ có 1 nút
+    if (tam->tiepTheo == NULL) {
+        free(tam);
+        *thamChieuDau = NULL;
+        return;
+    }
+
+    // Duyệt đến nút thứ hai cuối
+    while (tam->tiepTheo->tiepTheo != NULL) {
+        tam = tam->tiepTheo;
+    }
+
+    // Xóa nút cuối
+    free(tam->tiepTheo);
+    tam->tiepTheo = NULL;
+}
+
+// Hàm xóa một nút cụ thể
+void xoaNut(struct Nut** thamChieuDau, struct Nut* T) {
+    // Nếu danh sách rỗng hoặc T là NULL
+    if (*thamChieuDau == NULL || T == NULL) return;
+
+    // Nếu nút cần xóa là nút đầu
+    if (*thamChieuDau == T) {
+        *thamChieuDau = T->tiepTheo;
+        free(T);
+        return;
+    }
+
+    // Tìm nút trước T
+    struct Nut* tam = *thamChieuDau;
+    while (tam != NULL && tam->tiepTheo != T) {
+        tam = tam->tiepTheo;
+    }
+
+    // Nếu nút không được tìm thấy
+    if (tam == NULL) return;
+
+    // Ngắt liên kết nút
+    tam->tiepTheo = T->tiepTheo;
+    free(T);
+}
+
+int main() {
+    // Tạo danh sách liên kết 1 -> 2 -> 3 -> NULL
+    struct Nut* dau = taoNut(1);
+    dau->tiepTheo = taoNut(2);
+    dau->tiepTheo->tiepTheo = taoNut(3);
+
+    printf("Danh sách gốc: ");
+    inDanhSach(dau);
+
+    // Chèn nút 4 sau nút đầu
+    chenNut(dau, 4);
+    printf("Sau khi chèn 4 sau nút đầu: ");
+    inDanhSach(dau);
+
+    // Xóa nút cuối
+    xoaNutCuoi(&dau);
+    printf("Sau khi xóa nút cuối: ");
+    inDanhSach(dau);
+
+    // Xóa một nút cụ thể (nút thứ hai trong trường hợp này)
+    xoaNut(&dau, dau->tiepTheo);
+    printf("Sau khi xóa nút thứ hai: ");
+    inDanhSach(dau);
+
+    return 0;
+}
