@@ -1,0 +1,116 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Định nghĩa cấu trúc một nút
+typedef struct Nut {
+    char tu[256];        // Từ trong câu
+    int soLan;           // Số lần xuất hiện của từ
+    struct Nut* tiepTheo; // Con trỏ đến nút tiếp theo
+} Nut;
+
+void themTu(Nut** dau, char* tu) {
+    Nut* hienTai = *dau;
+    Nut* truocDo = NULL;
+    while (hienTai != NULL && strcmp(hienTai->tu, tu) != 0) {
+        truocDo = hienTai;
+        hienTai = hienTai->tiepTheo;
+    }
+
+    // Nếu từ đã tồn tại, tăng số đếm
+    if (hienTai != NULL) {
+        hienTai->soLan += 1;
+    } else {
+        // Nếu từ chưa tồn tại, thêm mới
+        Nut* nutMoi = (Nut*)malloc(sizeof(Nut));
+        strcpy(nutMoi->tu, tu);
+        nutMoi->soLan = 1;
+        nutMoi->tiepTheo = NULL;
+        
+        if (truocDo == NULL) {
+            *dau = nutMoi;
+        } else {
+            truocDo->tiepTheo = nutMoi;
+        }
+    }
+}
+
+Nut* timTuXuatHienNhieuNhat(Nut* dau) {
+    Nut* hienTai = dau;
+    Nut* nhieuNhat = dau;
+    
+    while (hienTai != NULL) {
+        if (hienTai->soLan > nhieuNhat->soLan) {
+            nhieuNhat = hienTai;
+        }
+        hienTai = hienTai->tiepTheo;
+    }
+    
+    return nhieuNhat;
+}
+
+void loaiBoTuLapLai(Nut* dau) {
+    Nut* hienTai = dau;
+    
+    while (hienTai != NULL && hienTai->tiepTheo != NULL) {
+        if (strcmp(hienTai->tu, hienTai->tiepTheo->tu) == 0) {
+            Nut* tam = hienTai->tiepTheo;
+            hienTai->tiepTheo = hienTai->tiepTheo->tiepTheo;
+            free(tam);
+        } else {
+            hienTai = hienTai->tiepTheo;
+        }
+    }
+}
+
+int demSoTuKhacNhau(Nut* dau) {
+    int dem = 0;
+    Nut* hienTai = dau;
+    
+    while (hienTai != NULL) {
+        dem += 1;
+        hienTai = hienTai->tiepTheo;
+    }
+    
+    return dem;
+}
+
+int main() {
+    Nut* dau = NULL;
+    char cau[] = "hoa nở trên cánh đồng, hoa nở trong vườn, hoa nở đặp trong mắt em";
+    char* tu = strtok(cau, " ,.");
+
+    // Thêm các từ vào danh sách liên kết
+    while (tu != NULL) {
+        themTu(&dau, tu);
+        tu = strtok(NULL, " ,.");
+    }
+
+    // Xác định từ xuất hiện nhiều nhất
+    Nut* nhieuNhat = timTuXuatHienNhieuNhat(dau);
+    printf("Từ xuất hiện nhiều nhất: %s (%d lần)\n", nhieuNhat->tu, nhieuNhat->soLan);
+
+    // Loại bỏ từ láy
+    loaiBoTuLapLai(dau);
+
+    // Đếm số từ vựng
+    int soTuKhacNhau = demSoTuKhacNhau(dau);
+    printf("Số từ khác nhau: %d\n", soTuKhacNhau);
+
+    // Hiển thị danh sách các từ và số lần xuất hiện của chúng
+    Nut* hienTai = dau;
+    printf("Danh sách từ:\n");
+    while (hienTai != NULL) {
+        printf("%s (%d lần)\n", hienTai->tu, hienTai->soLan);
+        hienTai = hienTai->tiepTheo;
+    }
+
+    // Giải phóng bộ nhớ đã cấp phát
+    while (dau != NULL) {
+        Nut* tam = dau;
+        dau = dau->tiepTheo;
+        free(tam);
+    }
+
+    return 0;
+}
