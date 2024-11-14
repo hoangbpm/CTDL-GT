@@ -1,0 +1,116 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Định nghĩa cấu trúc cho node danh sách liên kết
+typedef struct FileNode {
+    char ten[256];           // Tên file
+    long kichThuoc;          // Kích thước file
+    long thoiGianTao;        // Thời gian tạo file
+    struct FileNode* tiepTheo; // Con trỏ đến node tiếp theo
+} FileNode;
+
+// Hàm chèn một file vào danh sách liên kết theo thứ tự thời gian
+void chenFile(FileNode** dau, char* ten, long kichThuoc, long thoiGianTao) {
+    FileNode* nodeMoi = (FileNode*)malloc(sizeof(FileNode));
+    strcpy(nodeMoi->ten, ten);
+    nodeMoi->kichThuoc = kichThuoc;
+    nodeMoi->thoiGianTao = thoiGianTao;
+    nodeMoi->tiepTheo = NULL;
+
+    if (*dau == NULL || (*dau)->thoiGianTao > thoiGianTao) {
+        nodeMoi->tiepTheo = *dau;
+        *dau = nodeMoi;
+    } else {
+        FileNode* hienTai = *dau;
+        while (hienTai->tiepTheo != NULL && hienTai->tiepTheo->thoiGianTao <= thoiGianTao) {
+            hienTai = hienTai->tiepTheo;
+        }
+        nodeMoi->tiepTheo = hienTai->tiepTheo;
+        hienTai->tiepTheo = nodeMoi;
+    }
+}
+
+// Hàm tính tổng kích thước của tất cả các file trong danh sách
+long tinhTongKichThuoc(FileNode* dau) {
+    long tongKichThuoc = 0;
+    FileNode* hienTai = dau;
+    while (hienTai != NULL) {
+        tongKichThuoc += hienTai->kichThuoc;
+        hienTai = hienTai->tiepTheo;
+    }
+    return tongKichThuoc;
+}
+
+// Hàm sao lưu vào USB với giới hạn kích thước tối đa
+void saoLuuVaoUSB(FileNode** dau, long kichThuocToiDa) {
+    long kichThuocHienTai = tinhTongKichThuoc(*dau);
+
+    while (kichThuocHienTai > kichThuocToiDa) {
+        // Tìm file có kích thước nhỏ nhất để loại bỏ
+        FileNode* truocNhoNhat = NULL;
+        FileNode* nodeNhoNhat = *dau;
+        FileNode* hienTai = *dau;
+        while (hienTai->tiepTheo != NULL) {
+            if (hienTai->tiepTheo->kichThuoc < nodeNhoNhat->kichThuoc) {
+                truocNhoNhat = hienTai;
+                nodeNhoNhat = hienTai->tiepTheo;
+            }
+            hienTai = hienTai->tiepTheo;
+        }
+
+        // Loại bỏ file nhỏ nhất khỏi danh sách
+        if (truocNhoNhat != NULL) {
+            truocNhoNhat->tiepTheo = nodeNhoNhat->tiepTheo;
+        } else {
+            *dau = nodeNhoNhat->tiepTheo;
+        }
+        kichThuocHienTai -= nodeNhoNhat->kichThuoc;
+        free(nodeNhoNhat);
+    }
+}
+
+// Hàm in danh sách các file
+void inDanhSachFile(FileNode* dau) {
+    FileNode* hienTai = dau;
+    while (hienTai != NULL) {
+        printf("File: %s, Kích thước: %ld bytes, Thời gian tạo: %ld\n",
+               hienTai->ten, hienTai->kichThuoc, hienTai->thoiGianTao);
+        hienTai = hienTai->tiepTheo;
+    }
+}
+
+// Hàm giải phóng bộ nhớ của danh sách liên kết
+void giaiPhongDanhSachFile(FileNode* dau) {
+    while (dau != NULL) {
+        FileNode* tam = dau;
+        dau = dau->tiepTheo;
+        free(tam);
+    }
+}
+
+int main() {
+    FileNode* dau = NULL;
+
+    // Thêm các file vào danh sách
+    chenFile(&dau, "file1.txt", 700,52353525);
+    chenFile(&dau, "file2.txt", 500, 5235523);
+    chenFile(&dau, "file3.txt", 85556, 53253552);
+    chenFile(&dau, "file4.txt", 657344,555555);
+
+    // Tính tổng kích thước các file
+    printf("Tổng kích thước: %ld bytes\n", tinhTongKichThuoc(dau));
+
+    // Sao lưu vào USB với giới hạn kích thước 1MB để kiểm tra (1 * 1024 * 1024 bytes)
+    long kichThuocToiDa = 1L * 1024 * 1024;
+    saoLuuVaoUSB(&dau, kichThuocToiDa);
+
+    // In lại danh sách sau khi sao lưu
+    printf("Danh sách file sau khi sao lưu:\n");
+    inDanhSachFile(dau);
+
+    // Giải phóng bộ nhớ
+    giaiPhongDanhSachFile(dau);
+
+    return 0;
+}
