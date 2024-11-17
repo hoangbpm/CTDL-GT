@@ -1,0 +1,153 @@
+#include <iostream>  
+#include <string>  
+#include <ctime>  
+
+// Định nghĩa
+struct Nut {  
+    int kichThuoc; // Kích thước của tệp (tính bằng MB)  
+    std::time_t ngayChinhSuaCuoi; // Ngày chỉnh sửa cuối cùng của tệp  
+    std::string ten; // Tên tệp  
+    Nut* tiepTheo; // Con trỏ đến nút tiếp theo  
+
+    // Hàm khởi tạo một nút mới  
+    Nut(int kt, std::time_t ngay, const std::string& t)  
+        : kichThuoc(kt), ngayChinhSuaCuoi(ngay), ten(t), tiepTheo(nullptr) {}  
+};  
+
+// DanhSachLienKet để quản lý danh sách các tệp  
+class DanhSachLienKet {  
+public:  
+    Nut* dau;  
+
+    DanhSachLienKet() : dau(nullptr) {}  
+
+    // Phương thức thêm một tệp mới vào cuối 
+    void them(int kichThuoc, std::time_t ngayChinhSuaCuoi, const std::string& ten) {  
+        Nut* nutMoi = new Nut(kichThuoc, ngayChinhSuaCuoi, ten);  
+        if (!dau) {  
+            dau = nutMoi;  
+        } else {  
+            Nut* hienTai = dau;  
+            while (hienTai->tiepTheo) {  
+                hienTai = hienTai->tiepTheo;  
+            }  
+            hienTai->tiepTheo = nutMoi;  
+        }  
+    }  
+
+    // Phương thức sắp xếp danh sách liên kết theo kích thước tệp tăng dần  
+    void sapXepTheoKichThuoc() {  
+        if (!dau || !dau->tiepTheo) return;  
+
+        bool daHoanDoi;  
+        do {  
+            daHoanDoi = false;  
+            Nut* hienTai = dau;  
+            Nut* truocDo = nullptr;  
+            while (hienTai->tiepTheo) {  
+                if (hienTai->kichThuoc > hienTai->tiepTheo->kichThuoc) {  
+                    hoanDoiNut(truocDo, hienTai, hienTai->tiepTheo);  
+                    daHoanDoi = true;  
+                    if (!truocDo) { // Cập nhật lại đầu danh sách nếu cần  
+                        dau = hienTai;  
+                    }  
+                } else {  
+                    truocDo = hienTai;  
+                    hienTai = hienTai->tiepTheo;  
+                }  
+            }  
+        } while (daHoanDoi);  
+    }  
+
+    // Hàm trợ giúp để hoán đổi hai nút liền kề  
+    void hoanDoiNut(Nut* truocDo, Nut*& a, Nut*& b) {  
+        a->tiepTheo = b->tiepTheo;  
+        b->tiepTheo = a;  
+        if (truocDo) {  
+            truocDo->tiepTheo = b;  
+        }  
+    }  
+
+    // Phương thức xóa các tệp có kích thước nhỏ nhất và ngày chỉnh sửa lâu nhất  
+    void xoaNhoNhatVaCuNhat() {  
+        if (!dau) return;  
+
+        // Tìm kích thước nhỏ nhất  
+        sapXepTheoKichThuoc();  
+        int kichThuocNhoNhat = dau->kichThuoc;  
+
+        // Tìm tất cả các nút có kích thước nhỏ nhất và lấy nút cũ nhất  
+        Nut* nutNhoNhat = nullptr;  
+        std::time_t ngayCuNhat = std::time(nullptr);  
+        Nut* hienTai = dau;  
+        Nut* truocDo = nullptr;  
+        while (hienTai && hienTai->kichThuoc == kichThuocNhoNhat) {  
+            if (hienTai->ngayChinhSuaCuoi < ngayCuNhat) {  
+                ngayCuNhat = hienTai->ngayChinhSuaCuoi;  
+                nutNhoNhat = hienTai;  
+            }  
+            truocDo = hienTai;  
+            hienTai = hienTai->tiepTheo;  
+        }  
+
+        // Xóa nút có kích thước nhỏ nhất và ngày chỉnh sửa cũ nhất  
+        if (nutNhoNhat) {  
+            xoaNut(nutNhoNhat);  
+            std::cout << "Đã xóa tệp tin: " << nutNhoNhat->ten << " (Kích thước: " << nutNhoNhat->kichThuoc  
+                      << "MB, Chỉnh sửa cuối: " << std::ctime(&nutNhoNhat->ngayChinhSuaCuoi) << ")\n";  
+        } else {  
+            std::cout << "Không tìm thấy tệp tin để xóa.\n";  
+        }  
+    }  
+
+    // Phương thức trợ giúp để xóa một nút cụ thể  
+    void xoaNut(Nut* mucTieu) {  
+        if (!dau) return;  
+        if (dau == mucTieu) {  
+            Nut* temp = dau;  
+            dau = dau->tiepTheo;  
+            delete temp;  
+            return;  
+        }  
+        Nut* hienTai = dau;  
+        while (hienTai->tiepTheo && hienTai->tiepTheo != mucTieu) {  
+            hienTai = hienTai->tiepTheo;  
+        }  
+        if (hienTai->tiepTheo == mucTieu) {  
+            Nut* temp = hienTai->tiepTheo;  
+            hienTai->tiepTheo = temp->tiepTheo;  
+            delete temp;  
+        }  
+    }  
+
+    // Phương thức in ra tất cả các tệp trong danh sách  
+    void inDanhSach() const {  
+        Nut* hienTai = dau;  
+        while (hienTai) {  
+            std::cout << "Tệp: " << hienTai->ten << ", Kích thước: " << hienTai->kichThuoc << "MB, Chỉnh sửa cuối: "  
+                      << std::ctime(&hienTai->ngayChinhSuaCuoi) << '\n';  
+            hienTai = hienTai->tiepTheo;  
+        }  
+    }  
+};  
+
+int main() {  
+    DanhSachLienKet tapTin;  
+    // Thêm một số tệp mẫu  
+    tapTin.them(100, std::time(nullptr) - 30000, "TapTin1");  
+    tapTin.them(200, std::time(nullptr) - 50000, "TapTin2");  
+    tapTin.them(100, std::time(nullptr) - 15000, "TapTin3");  
+    tapTin.them(300, std::time(nullptr) - 20000, "TapTin4");  
+
+    std::cout << "Danh sách trước khi xóa:\n";  
+    tapTin.inDanhSach();  
+
+    // Thực hiện xóa tệp có kích thước nhỏ nhất và cũ nhất  
+    tapTin.xoaNhoNhatVaCuNhat();  
+
+    std::cout << "\nDanh sách sau khi xóa:\n";  
+    tapTin.inDanhSach();  
+
+    return 0;  
+}
+// ChatGPT gen ideas
