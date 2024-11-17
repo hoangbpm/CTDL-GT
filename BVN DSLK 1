@@ -1,0 +1,109 @@
+#include <iostream>  
+
+// Định nghĩa cấu trúc Node  
+struct Node {  
+    int duLieu; 
+    Node* tiepTheo; 
+};  
+
+// Lớp DanhSachLienKet quản lý các nút và thao tác  
+class DanhSachLienKet {  
+public:  
+    DanhSachLienKet() : dau(nullptr) {}  
+
+   
+    void xoaTuDau() {  
+        if (dau == nullptr) {  
+            std::cout << "không có gì để xóa từ đầu.\n";  
+            return;  
+        }  
+        Node* temp = dau;  
+        dau = dau->tiepTheo;  
+        delete temp;  
+        std::cout << "Đã xóa node đầu danh sách.\n";  
+    }  
+
+    // Phương thức xóa Node từ cuối danh sách  
+    void xoaTuCuoi() {  
+        if (dau == nullptr) {  
+            std::cout << "không có gì để xóa từ cuối.\n";  
+            return;  
+        }  
+        if (dau->tiepTheo == nullptr) {  
+            delete dau;  
+            dau = nullptr;  
+            std::cout << "Đã xóa node cuối.\n";  
+            return;  
+        }  
+        Node* hienTai = dau;  
+        while (hienTai->tiepTheo->tiepTheo != nullptr) {  
+            hienTai = hienTai->tiepTheo;  
+        }  
+        delete hienTai->tiepTheo;  
+        hienTai->tiepTheo = nullptr;  
+        std::cout << "Đã xóa node từ cuối danh sách.\n";  
+    }  
+
+    // Phương thức xóa một Node sau một Node chỉ định  
+    void xoaSauNode(int giaTri) {  
+        Node* hienTai = dau;  
+        while (hienTai != nullptr && hienTai->duLieu != giaTri) {  
+            hienTai = hienTai->tiepTheo;  
+        }  
+        if (hienTai != nullptr && hienTai->tiepTheo != nullptr) {  
+            Node* temp = hienTai->tiepTheo;  
+            hienTai->tiepTheo = hienTai->tiepTheo->tiepTheo;  
+            delete temp;  
+            std::cout << "Đã xóa node sau giá trị " << giaTri << ".\n";  
+        } else {  
+            std::cout << "Không tìm thấy node sau giá trị " << giaTri << ", hoặc giá trị không có trong danh sách.\n";  
+        }  
+    }  
+
+    // Phương thức thêm node vào danh sách (dùng để kiểm tra)  
+    void themCuoi(int giaTri) {  
+        Node* nodeMoi = new Node{giaTri, nullptr};  
+        if (dau == nullptr) {  
+            dau = nodeMoi;  
+            return;  
+        }  
+        Node* hienTai = dau;  
+        while (hienTai->tiepTheo != nullptr) {  
+            hienTai = hienTai->tiepTheo;  
+        }  
+        hienTai->tiepTheo = nodeMoi;  
+    }  
+
+    // Phương thức để in 
+    void inDanhSach() const {  
+        Node* hienTai = dau;  
+        while (hienTai != nullptr) {  
+            std::cout << hienTai->duLieu << " -> ";  
+            hienTai = hienTai->tiepTheo;  
+        }  
+        std::cout << "nullptr\n";  
+    }  
+
+private:  
+    Node* dau; // Con trỏ trỏ đến đầu 
+};  
+
+int main() {  
+    DanhSachLienKet danhSach;  
+    danhSach.themCuoi(1);  
+    danhSach.themCuoi(2);  
+    danhSach.themCuoi(3);  
+    danhSach.themCuoi(4);  
+    danhSach.inDanhSach();  
+
+    danhSach.xoaTuDau();  
+    danhSach.inDanhSach();  
+
+    danhSach.xoaSauNode(2);  
+    danhSach.inDanhSach();  
+
+    danhSach.xoaTuCuoi();  
+    danhSach.inDanhSach();  
+
+    return 0;  
+}
