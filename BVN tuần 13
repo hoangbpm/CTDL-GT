@@ -1,0 +1,123 @@
+#include <iostream>  
+
+// định nghĩa cấu trúc cho một nút trong cây  
+struct Node {  
+    char data;       // Dữ liệu của nút 
+    Node *left;      // Con trái  
+    Node *right;     // Con phải  
+
+    // Constructor  
+    Node(char val) : data(val), left(nullptr), right(nullptr) {}  
+};  
+
+// Hàm xây dựng cây biểu thức  
+Node* constructExpressionTree(const char* expression) {  
+    Node* nodes[100];  // Mảng cho các nút  
+    char ops[100];     // Mảng cho toán tử  
+    int top_nodes = -1, top_ops = -1;  // Chỉ số cho các mảng  
+
+    for (int i = 0; expression[i] != '\0'; i++) {  
+        char c = expression[i];  
+
+        // Bỏ qua khoảng trắng  
+        if (c == ' ') continue;  
+
+        if (isdigit(c)) {  
+            // Nếu là toán hạng, tạo nút mới và đẩy vào stack  
+            nodes[++top_nodes] = new Node(c);  
+        } else if (c == '(') {  
+            // Nếu là dấu mở ngoặc, đẩy vào stack ops  
+            ops[++top_ops] = c;  
+        } else if (c == ')') {  
+            while (top_ops >= 0 && ops[top_ops] != '(') {  
+                Node* right = nodes[top_nodes--];    // Lấy phần tử trên của nodes  
+                Node* left = nodes[top_nodes--];     // Lấy phần tử thứ hai trên  
+                char op = ops[top_ops--];             // Lấy toán tử trên ops  
+
+                Node* newNode = new Node(op);         // Tạo nút mới cho toán tử  
+                newNode->left = left;                 // Liên kết con trái  
+                newNode->right = right;               // Liên kết con phải  
+
+                nodes[++top_nodes] = newNode;         // Đẩy nút mới vào stack  
+            }  
+            top_ops--; // Xóa dấu '('  
+        } else {  
+            // Nếu là toán tử, xử lý ưu tiên  
+            while (top_ops >= 0 && ops[top_ops] != '(') {  
+                Node* right = nodes[top_nodes--];  
+                Node* left = nodes[top_nodes--];  
+                char op = ops[top_ops--];  
+
+                Node* newNode = new Node(op);  
+                newNode->left = left;  
+                newNode->right = right;  
+
+                nodes[++top_nodes] = newNode;  
+            }  
+            ops[++top_ops] = c; // Đưa toán tử vào stack  
+        }  
+    }  
+
+    // Xử lý hết các toán tử còn lại  
+    while (top_ops >= 0) {  
+        Node* right = nodes[top_nodes--];  
+        Node* left = nodes[top_nodes--];  
+        char op = ops[top_ops--];  
+
+        Node* newNode = new Node(op);  
+        newNode->left = left;  
+        newNode->right = right;  
+
+        nodes[++top_nodes] = newNode; // Đẩy nút mới vào stack  
+    }  
+
+    return nodes[0]; // Trả về nút gốc của cây biểu thức  
+}  
+
+// Hàm Duyệt Cây: In theo thứ tự (in-order)  
+void inorderTraversal(Node* root) {  
+    if (root) {  
+        inorderTraversal(root->left);  
+        std::cout << root->data << ' ';  
+        inorderTraversal(root->right);  
+    }  
+}  
+
+// Hàm Duyệt Cây: In theo tiền tự (pre-order)  
+void preorderTraversal(Node* root) {  
+    if (root) {  
+        std::cout << root->data << ' ';  
+        preorderTraversal(root->left);  
+        preorderTraversal(root->right);  
+    }  
+}  
+
+// Hàm Duyệt Cây: In theo hậu tự (post-order)  
+void postorderTraversal(Node* root) {  
+    if (root) {  
+        postorderTraversal(root->left);  
+        postorderTraversal(root->right);  
+        std::cout << root->data << ' ';  
+    }  
+}  
+
+// Hàm chính  
+int main() {  
+    const char* expression = "3 + ((5 - 2) * 2)"; // Biểu thức ví dụ  
+    Node* root = constructExpressionTree(expression); // Tạo cây từ biểu thức  
+
+    // Duyệt cây theo các thứ tự khác nhau  
+    std::cout << "Duyệt theo thứ tự (in-order): ";  
+    inorderTraversal(root);  
+    std::cout << '\n';  
+
+    std::cout << "Duyệt theo tiền tự (pre-order): ";  
+    preorderTraversal(root);  
+    std::cout << '\n';  
+
+    std::cout << "Duyệt theo hậu tự (post-order): ";  
+    postorderTraversal(root);  
+    std::cout << '\n';  
+
+    return 0;  
+}
