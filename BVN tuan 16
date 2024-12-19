@@ -1,0 +1,164 @@
+#include <iostream>  
+#include <string>  
+
+using namespace std;  
+
+// Cấu trúc Node để biểu diễn một mục trong cuốn sách  
+struct Node {  
+    string tieuDe;         // Tên của mục (chương, phần, ...)  
+    int soTrang;          // Số trang của mục  
+    Node* keTiep;         // Con trỏ tới phần tử kế tiếp (mục con)  
+    Node* con;            // Con trỏ tới nút con đầu tiên  
+
+    // Constructor khởi tạo cho một node  
+    Node(const string& t, int p) : tieuDe(t), soTrang(p), keTiep(nullptr), con(nullptr) {}  
+};  
+
+// Lớp Sách để quản lý cây mục lục  
+class Sach {  
+private:  
+    Node* goc; // Node gốc của cây  
+
+    // Hàm đệ quy để tính số chương  
+    int demChuong(Node* node) {  
+        if (!node) return 0;  
+        int dem = 0;  
+        if (node->con) // Nếu có node con thì là một chương  
+            dem++;  
+        for (Node* hienTai = node->con; hienTai != nullptr; hienTai = hienTai->keTiep) {  
+            dem += demChuong(hienTai);  
+        }  
+        return dem;  
+    }  
+
+    // Hàm đệ quy tìm chương dài nhất  
+    int timChuongDaiNhat(Node* node) {  
+        if (!node) return 0;  
+        int daiNhat = node->tieuDe.length(); // Độ dài tên mục hiện tại  
+        for (Node* hienTai = node->con; hienTai != nullptr; hienTai = hienTai->keTiep) {  
+            daiNhat = max(daiNhat, timChuongDaiNhat(hienTai));  
+        }  
+        return daiNhat;  
+    }  
+
+    // Hàm đệ quy để xóa một mục  
+    Node* xoaNode(Node* node, const string& tieuDe) {  
+        if (!node) return nullptr;  
+
+        // Kiểm tra node hiện tại có phải là node cần xóa không  
+        if (node->tieuDe == tieuDe) {  
+            Node* temp = node->con; // Lưu node con để giữ lại  
+            delete node; // Xóa node hiện tại  
+            return temp; // Trả về node con thay thế  
+        }  
+
+        // Xử lý các node con để kiểm tra tiếp  
+        Node* hienTai = node->con;  
+        Node* truoc = nullptr;  
+
+        while (hienTai != nullptr) {  
+            Node* ketQua = xoaNode(hienTai, tieuDe);  
+            if (hienTai->tieuDe == tieuDe) {  
+                // Nếu node con đã bị xóa  
+                if (truoc) {  
+                    truoc->keTiep = hienTai->keTiep; // Bỏ qua node con bị xóa  
+                } else {  
+                    node->con = hienTai->keTiep; // Cập nhật con đầu tiên nếu node con đầu tiên bị xóa  
+                }  
+                delete hienTai; // Xóa node  
+                hienTai = ketQua; // Tiếp tục với con trỏ đúng  
+            } else {  
+                truoc = hienTai; // Cập nhật truoc  
+                hienTai = hienTai->keTiep; // Di chuyển tới phần tử kế tiếp  
+            }  
+        }  
+        return node; // Trả về node gốc  
+    }  
+
+public:  
+    // Constructor khởi tạo  
+    Sach() : goc(nullptr) {}  
+
+    // Thêm một mục mới vào cây  
+    void themChuong(const string& tieuDe, int soTrang) {  
+        Node* nodeMoi = new Node(tieuDe, soTrang);  
+        nodeMoi->keTiep = goc; // Chèn vào đầu  
+        goc = nodeMoi;  
+    }  
+
+    // Thêm node con (phần, tiểu phần, ...)  
+    void themCon(const string& tieuDeCha, const string& tieuDeCon, int soTrangCon) {  
+        Node* hienTai = goc;  
+        while (hienTai) {  
+            if (hienTai->tieuDe == tieuDeCha) {  
+                Node* nodeCon = new Node(tieuDeCon, soTrangCon);  
+                nodeCon->keTiep = hienTai->con; // Chèn vào danh sách con  
+                hienTai->con = nodeCon;  
+                return;  
+            }  
+            hienTai = hienTai->keTiep;  
+        }  
+        cout << "Không tìm thấy chương cha." << endl;  
+    }  
+
+    // Xác định số chương của cuốn sách  
+    int laySoChuong() {  
+        return demChuong(goc);  
+    }  
+
+    // Tìm chiều dài tên chương dài nhất  
+    int layChieuDaiChuongDaiNhat() {  
+        return timChuongDaiNhat(goc);  
+    }  
+
+    // Tìm và xóa một mục  
+    void xoaMuc(const string& tieuDe) {  
+        goc = xoaNode(goc, tieuDe);  
+    }  
+
+    // In thông tin cuốn sách (tùy chọn cho việc kiểm tra)  
+    void inSach(Node* node, int capDo = 0) {  
+        if (!node) return;  
+        for (int i = 0; i < capDo; i++) cout << "    "; // Thụt lề  
+        cout << node->tieuDe << " (Trang: " << node->soTrang << ")" << endl;  
+        inSach(node->con, capDo + 1); // In node con  
+        inSach(node->keTiep, capDo);   // In node kế tiếp  
+    }  
+
+    // Hàm hỗ trợ in toàn bộ cuốn sách  
+    void in() {  
+        inSach(goc);  
+    }  
+};  
+
+int main() {  
+    Sach sachCuaToi;  
+
+    // Thêm các chương  
+    sachCuaToi.themChuong("Chương 1", 1);  
+    sachCuaToi.themChuong("Chương 2", 5);  
+    sachCuaToi.themCon("Chương 1", "Phần 1.1", 2);  
+    sachCuaToi.themCon("Chương 1", "Phần 1.2", 3);  
+    sachCuaToi.themCon("Chương 2", "Phần 2.1", 6);  
+    sachCuaToi.themCon("Chương 1", "Tiểu phần 1.2.1", 4);  
+
+    // In thông tin cuốn sách  
+    cout << "Nội dung cuốn sách:" << endl;  
+    sachCuaToi.in();  
+
+    // Đếm số chương  
+    cout << "Số chương: " << sachCuaToi.laySoChuong() << endl;  
+
+    // Tìm chiều dài tên chương dài nhất  
+    cout << "Chiều dài tên chương dài nhất: " << sachCuaToi.layChieuDaiChuongDaiNhat() << endl;  
+
+    // Xóa một mục  
+    cout << "Đang xóa 'Phần 1.2'..." << endl;  
+    sachCuaToi.xoaMuc("Phần 1.2");  
+
+    // In lại thông tin sau khi xóa  
+    cout << "Nội dung cuốn sách sau khi xóa:" << endl;  
+    sachCuaToi.in();  
+
+    return 0;  
+}
