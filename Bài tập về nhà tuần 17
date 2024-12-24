@@ -1,0 +1,150 @@
+#include <iostream>  
+
+using namespace std;  
+
+// Cấu trúc một nút trong cây AVL  
+struct Nut_AVL {  
+    int gia_tri;            // Giá trị của nút  
+    Nut_AVL* con_trai;      // Con trỏ đến nút con bên trái  
+    Nut_AVL* con_phai;      // Con trỏ đến nút con bên phải  
+    int chieu_cao;          // Chiều cao của nút  
+
+    // Constructor khởi tạo nút với giá trị và chiều cao ban đầu bằng 1  
+    Nut_AVL(int gia_tri_moi) : gia_tri(gia_tri_moi), con_trai(nullptr), con_phai(nullptr), chieu_cao(1) {}  
+};  
+
+// Hàm để lấy chiều cao của nút  
+int lay_chieu_cao(Nut_AVL* nut) {  
+    return nut ? nut->chieu_cao : 0; // Nếu nút không tồn tại, trả về 0  
+}  
+
+// Hàm để lấy độ cân bằng của nút  
+int lay_do_can_bang(Nut_AVL* nut) {  
+    return nut ? lay_chieu_cao(nut->con_trai) - lay_chieu_cao(nut->con_phai) : 0; // Cân bằng = Chiều cao bên trái - Chiều cao bên phải  
+}  
+
+// Xoay phải  
+Nut_AVL* xoay_phai(Nut_AVL* y) {  
+    Nut_AVL* x = y->con_trai;        // Nút trái của y  
+    Nut_AVL* T2 = x->con_phai;       // Nút phải của x  
+
+    // Thực hiện phép xoay  
+    x->con_phai = y;                 // Gán y là con bên phải của x  
+    y->con_trai = T2;                // Gán T2 là con bên trái của y  
+
+    // Cập nhật chiều cao  
+    y->chieu_cao = max(lay_chieu_cao(y->con_trai), lay_chieu_cao(y->con_phai)) + 1;  
+    x->chieu_cao = max(lay_chieu_cao(x->con_trai), lay_chieu_cao(x->con_phai)) + 1;  
+
+    return x; // Trả về nút mới là gốc  
+}  
+
+// Xoay trái  
+Nut_AVL* xoay_trai(Nut_AVL* x) {  
+    Nut_AVL* y = x->con_phai;       // Nút phải của x  
+    Nut_AVL* T2 = y->con_trai;      // Nút trái của y  
+
+    // Thực hiện phép xoay  
+    y->con_trai = x;                // Gán x là con bên trái của y  
+    x->con_phai = T2;                // Gán T2 là con bên phải của x  
+
+    // Cập nhật chiều cao  
+    x->chieu_cao = max(lay_chieu_cao(x->con_trai), lay_chieu_cao(x->con_phai)) + 1;  
+    y->chieu_cao = max(lay_chieu_cao(y->con_trai), lay_chieu_cao(y->con_phai)) + 1;  
+
+    return y; // Trả về nút mới là gốc  
+}  
+
+// Hàm bổ sung một nút mới vào cây AVL  
+Nut_AVL* them_nut(Nut_AVL* nut, int gia_tri) {  
+    // 1. Thực hiện chèn như trong cây nhị phân tìm kiếm  
+    if (!nut) return new Nut_AVL(gia_tri); // Nếu cây rỗng, trả về nút mới  
+
+    if (gia_tri < nut->gia_tri) {  
+        nut->con_trai = them_nut(nut->con_trai, gia_tri); // Chèn vào cây con bên trái  
+    } else if (gia_tri > nut->gia_tri) {  
+        nut->con_phai = them_nut(nut->con_phai, gia_tri); // Chèn vào cây con bên phải  
+    } else { // Không cho phép nút trùng  
+        return nut;  
+    }  
+
+    // 2. Cập nhật chiều cao của nút tổ tiên  
+    nut->chieu_cao = max(lay_chieu_cao(nut->con_trai), lay_chieu_cao(nut->con_phai)) + 1;  
+
+    // 3. Kiểm tra cân bằng  
+    int do_can_bang = lay_do_can_bang(nut);  
+
+    // Nếu mất cân bằng, sẽ thực hiện các phép xoay  
+    // Left Left Case  
+    if (do_can_bang > 1 && gia_tri < nut->con_trai->gia_tri)  
+        return xoay_phai(nut); // Xoay phải  
+
+    // Right Right Case  
+    if (do_can_bang < -1 && gia_tri > nut->con_phai->gia_tri)  
+        return xoay_trai(nut); // Xoay trái  
+
+    // Left Right Case  
+    if (do_can_bang > 1 && gia_tri > nut->con_trai->gia_tri) {  
+        nut->con_trai = xoay_trai(nut->con_trai); // Xoay trái trước  
+        return xoay_phai(nut); // Sau đó xoay phải  
+    }  
+
+    // Right Left Case  
+    if (do_can_bang < -1 && gia_tri < nut->con_phai->gia_tri) {  
+        nut->con_phai = xoay_phai(nut->con_phai); // Xoay phải trước  
+        return xoay_trai(nut); // Sau đó xoay trái  
+    }  
+
+    // Trả về con trỏ của nút (không thay đổi)  
+    return nut;  
+}  
+
+// Duyệt cây theo thứ tự  
+void duyet_theo_thu_tu(Nut_AVL* nut) {  
+    if (nut) {  
+        duyet_theo_thu_tu(nut->con_trai);      // Duyệt bên trái  
+        cout << nut->gia_tri << " "; // In giá trị của nút  
+        duyet_theo_thu_tu(nut->con_phai);     // Duyệt bên phải  
+    }  
+}  
+
+// Duyệt cây theo gốc  
+void duyet_theo_goc(Nut_AVL* nut) {  
+    if (nut) {  
+        cout << nut->gia_tri << " "; // In giá trị của nút  
+        duyet_theo_goc(nut->con_trai);     // Duyệt bên trái  
+        duyet_theo_goc(nut->con_phai);    // Duyệt bên phải  
+    }  
+}  
+
+// Duyệt cây theo sau  
+void duyet_theo_sau(Nut_AVL* nut) {  
+    if (nut) {  
+        duyet_theo_sau(nut->con_trai);    // Duyệt bên trái  
+        duyet_theo_sau(nut->con_phai);   // Duyệt bên phải  
+        cout << nut->gia_tri << " "; // In giá trị của nút  
+    }  
+}  
+
+// Chương trình chính để kiểm tra  
+int main() {  
+    Nut_AVL* goc = nullptr;  // Khởi tạo cây rỗng  
+    const int SO_PHAN_TU = 6; // Số phần tử trong mảng  
+    int cac_gia_tri[SO_PHAN_TU] = {10, 20, 30, 40, 50, 25}; // Mảng các phần tử cần thêm vào cây  
+
+    for (int i = 0; i < SO_PHAN_TU; ++i) {  
+        goc = them_nut(goc, cac_gia_tri[i]); // Thêm phần tử vào cây  
+        cout << "Cây sau khi thêm " << cac_gia_tri[i] << ":\n";  
+        cout << "Duyệt theo thứ tự: ";   
+        duyet_theo_thu_tu(goc);   
+        cout << "\n"; // In cây theo thứ tự  
+        cout << "Duyệt theo gốc: ";   
+        duyet_theo_goc(goc);   
+        cout << "\n"; // In cây theo gốc  
+        cout << "Duyệt theo sau: ";   
+        duyet_theo_sau(goc);   
+        cout << "\n\n"; // In cây theo sau  
+    }  
+
+    return 0; // Kết thúc chương trình  
+}
